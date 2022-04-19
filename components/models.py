@@ -93,6 +93,16 @@ class ActionStateTracking(CoreModel):
     value_score = torch.cat([enum_score, copy_score], dim=1)        # batch_size x 226
 
     return action_score, value_score
+  
+  def ast_loss(self, scores, targets, loss_func):
+    action_score, value_score = scores
+    action_target, value_target = targets
+
+    action_loss = loss_func(action_score, action_target)
+    value_loss = loss_func(value_score, value_target)
+
+    total_loss = action_loss + value_loss
+    return total_loss
 
 class CascadeDialogSuccess(CoreModel):
   """ Unlike the BaseModel, will output 5 predictions, one for each component """
@@ -161,3 +171,30 @@ class CascadeDialogSuccess(CoreModel):
     value_score = torch.cat([enum_score, copy_score], dim=1)        # batch_size x 225
 
     return intent_score, nextstep_score, action_score, value_score, utt_score
+  
+  def cds_loss(scores, targets, loss_func):
+    intent_scores, nextstep_scores, action_scores, value_scores, utt_scores = scores
+    intent_target, nextstep_target, action_target, value_target, utt_target = targets
+    
+    utterance_mask = nextstep_target == 0  # 0 is the index of 'retrieve_utterance'
+    batch_size, num_candidates = utt_scores.shape
+    utt_scores = utt_scores * utterance_mask.unsqueeze(1).repeat(1, num_candidates)
+    utterance_target = utt_target * utterance_mask
+
+    intent_loss   = loss_func(intent_scores, intent_target)
+    nextstep_loss = loss_func(nextstep_scores, nextstep_target)
+    action_loss   = loss_func(action_scores, action_target)
+    value_loss    = loss_func(value_scores, value_target)
+    
+    utt_target_ids = utterance_target.unsqueeze(1)   # batch_size, 1
+    chosen = torch.gather(utt_scores, dim=1, index=utt_target_ids)
+    correct = chosen.sum()                   # scalar
+
+    shift = torch.max(utt_scores)             # perform log sum exp of the incorrect scores
+    res = torch.exp(utt_scores - shift)       # batch_size, num_candidates
+    res = torch.log(torch.sum(res, dim=1))   # batch_size
+    incorrect = torch.sum(shift + res)       # add the shift back in to complete the log-sum-exp overflow trick
+    utt_loss = incorrect - correct
+
+    total_loss = intent_loss + nextstep_loss + action_loss + value_loss + utt_loss
+    return total_loss

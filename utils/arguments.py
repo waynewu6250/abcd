@@ -3,7 +3,7 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 def solicit_params():
   parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
   parser.add_argument('--seed', help='Random seed', type=int, default=14)
-  parser.add_argument('--model-type', choices=['roberta', 'bert', 'dialogpt', 'albert'],
+  parser.add_argument('--model-type', choices=['roberta', 'bert', 'dialogpt', 'albert', 't5'],
             help='Which type of encoder and tokenizer to use', default='bert')
   parser.add_argument('--task', default='ast', type=str, choices=['ast', 'cds'],
             help='choose which of the two major tasks to train the model', )
@@ -13,6 +13,8 @@ def solicit_params():
             help='whether or not to have verbose prints')
 
   # ------ DIRECTORY AND SAVING --------
+  parser.add_argument('--load-pretrain', default=False, action='store_true', 
+            help='whether to load the previous checkpoint')
   parser.add_argument('--output-dir', default='outputs/', type=str)
   parser.add_argument('--input-dir', default='data/', type=str)
   parser.add_argument('--prefix', type=str, default='0524',

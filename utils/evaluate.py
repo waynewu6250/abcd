@@ -2,6 +2,7 @@ import os, sys, pdb
 import random
 import json
 import torch
+import re
 import numpy as np
 import time as tm
 import pandas as pd
@@ -14,6 +15,37 @@ from sklearn.metrics import accuracy_score
 from components.systems import Application
 from utils.help import prepare_inputs
 from utils.load import load_guidelines
+
+
+def ast_t5_report(preds, labels):
+
+  joint_acc, action_acc, value_acc, total = 0, 0, 0, 0
+
+  for batch_preds, batch_labels in zip(preds, labels):
+    for idx, (pred, label) in enumerate(zip(batch_preds, batch_labels[1])):
+      if label.find('[sep]') != -1:
+        label = label.replace('[sep]', ' ')
+        print(pred)
+        print(label)
+      true_action, true_value = label.split(' | ')
+      true_joint = label.replace(' | ', ' ')
+      if re.match(true_action, pred):
+        action_acc += 1
+      if pred == true_joint:
+        joint_acc += 1
+      if re.search(true_value, pred):
+        value_acc += 1
+      total += 1
+  
+  action_acc_score = action_acc / float(total) if total!=0 else 0
+  value_acc_score = value_acc / float(total) if total!=0 else 0
+  joint_acc_score = joint_acc / float(total) if total!=0 else 0
+
+  full_result = {'Action_Accuracy': round(action_acc_score, 4),
+                 'Value_Accuracy': round(value_acc_score, 4),
+                 'Joint_Accuracy': round(joint_acc_score, 4),}
+    
+  return full_result, 'Joint_Accuracy'
 
 def ast_report(predictions, labels):
   bslot_preds, value_preds = predictions

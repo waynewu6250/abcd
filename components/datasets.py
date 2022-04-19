@@ -5,22 +5,24 @@ from torch.utils.data import Dataset
 
 class BaseFeature(object):
   """A single set of features of data."""
-  def __init__(self, input_ids, segment_ids, input_mask, label_id, position_ids=None):
+  def __init__(self, input_ids, segment_ids, input_mask, output_ids, label_id, position_ids=None):
     self.input_id = input_ids
     self.segment_id = segment_ids
     self.mask_id = input_mask
+    self.output_id = output_ids
     self.label_id = label_id
     self.position_id = position_ids
 
 class ActionFeature(BaseFeature):
   """ A single set of features with precomputed context token ids"""
-  def __init__(self, input_ids, segment_ids, input_mask, label_ids, context):
-    super().__init__(input_ids, segment_ids, input_mask, label_ids['value'])
+  def __init__(self, input_ids, segment_ids, input_mask, output_ids, label_ids, context, turn_action):
+    super().__init__(input_ids, segment_ids, input_mask, output_ids, label_ids['value'])
     # token_ids is a batch_size length list, where each item is 100 ids
     self.context_token = context['token_ids']
     self.context_segment = context['segment_ids']
     self.context_mask = context['mask_ids']
     self.action_id = label_ids['action']
+    self.turn_action = turn_action
 
 class CompletionFeature(BaseFeature):
   """ A single set of completion features with precomputed context token ids"""
@@ -66,15 +68,17 @@ class ActionDataset(BaseDataset):
     input_ids = torch.tensor([f.input_id for f in features], dtype=torch.long)
     segment_ids = torch.tensor([f.segment_id for f in features], dtype=torch.long)
     mask_ids = torch.tensor([f.mask_id for f in features], dtype=torch.long)
+    output_ids = torch.tensor([f.output_id.numpy() for f in features], dtype=torch.long)
     context_tokens = torch.tensor([f.context_token for f in features], dtype=torch.long)
     context_segments = torch.tensor([f.context_segment for f in features], dtype=torch.long)
     context_masks = torch.tensor([f.context_mask for f in features], dtype=torch.long)
+    turn_actions = [f.turn_action for f in features]
     
     action_ids = torch.tensor([f.action_id for f in features], dtype=torch.long)
     value_ids = torch.tensor([f.label_id for f in features], dtype=torch.long)
 
     return (input_ids, segment_ids, mask_ids, context_tokens, context_segments, context_masks,
-              action_ids, value_ids)
+              action_ids, value_ids, output_ids, turn_actions)
 
 class CompletionDataset(BaseDataset):
 

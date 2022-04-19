@@ -6,7 +6,7 @@ import math
 import torch
 import numpy as np
 
-from transformers import BertTokenizer, RobertaTokenizer, AlbertTokenizer
+from transformers import BertTokenizer, RobertaTokenizer, AlbertTokenizer, T5Tokenizer
 from components.tools import RAdam, AdamW, get_linear_schedule_with_warmup
     
 def load_data(args, already_cached):
@@ -40,6 +40,8 @@ def load_tokenizer(args):
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
   elif args.model_type == 'albert':
     tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
+  elif args.model_type == 't5':
+    tokenizer = T5Tokenizer.from_pretrained('t5-small', bos_token="[bos]", eos_token="[eos]", sep_token="[sep]")
 
   tokenizer.add_tokens(special)
   return tokenizer, ontology

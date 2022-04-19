@@ -20,6 +20,7 @@ class ExperienceLogger(object):
         self.log_interval = args.log_interval
 
         self.best_score = float('-inf')
+        self.best_loss = float('inf')
         self.task = args.task
         self.mtype = args.model_type
         self.verbose = args.verbose
@@ -48,15 +49,16 @@ class ExperienceLogger(object):
         for key in sorted(result.keys()):
             self.logger.info("  %s = %s", key, str(result[key]))
 
-    def log_train(self, step, loss, result, metric):
+    def log_train(self, step, loss, model, result=None, metric=None):
         if self.log_interval > 0 and self.global_step % self.log_interval == 0:
-            log_str = 'Step {:>6d} | Loss {:5.4f}'.format(step, loss)
-            self.add_scalar('train', 'loss', loss, self.global_step)
+            # model.save_pretrained(self.filepath)
+            log_str = 'Step {:>6d} | Loss {:5.4f} | Step: {}'.format(step, loss, self.global_step)
+            # self.add_scalar('train', 'loss', loss, self.global_step)
 
-            if self.verbose:
-                value = round(result[metric], 3)
-                log_str += f" | {metric} {value}"
-                self.add_scalar('train', metric.lower(), value, self.global_step)
+            # if self.verbose:
+            #     value = round(result[metric], 3)
+            #     log_str += f" | {metric} {value}"
+            #     self.add_scalar('train', metric.lower(), value, self.global_step)
             self.logger.info(log_str)
 
         self.global_step += 1

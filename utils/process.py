@@ -11,20 +11,8 @@ from tqdm import tqdm as progress_bar
 from components.datasets import ActionFeature, CompletionFeature, CascadeFeature
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
-def setup_dataloader(datasets, batch_size, split):
-  dataset = datasets[split]
-  num_examples = len(dataset)
-  sampler = RandomSampler(dataset) if split == 'train' else SequentialSampler(dataset)
-  collate = dataset.collate_func
-  dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size, collate_fn=collate)
-  print(f"Loaded {split} data with {len(dataloader)} batches")
-  return dataloader, num_examples
 
-def notify_feature_sizes(args, features):
-  if args.verbose:
-    for split, feats in features.items():
-      print(f"{split}: {len(feats)} features")
-
+###############  Prepare label dictionary ###############
 def prepare_action_labels(ontology):
   action_list = []
   for section, buttons in ontology["actions"].items():
@@ -51,6 +39,10 @@ def prepare_value_labels(ontology):
         value_list.append(val.lower())
   return {slotval: idx for idx, slotval in enumerate(value_list)}
 
+
+
+
+############### Base processor ###############
 class BaseProcessor(object):
 
   def __init__(self, args, tokenizer, ontology):
@@ -60,6 +52,9 @@ class BaseProcessor(object):
 
     self.tokenizer = tokenizer
     self.ontology = ontology
+
+    actions = ontology['actions']
+    self.action_list = [action for section, action_item in actions.items() for action in action_item.keys()]
 
     self.prepare_labels(args)
     self.prepare_special_tokens(args)
@@ -93,7 +88,7 @@ class BaseProcessor(object):
     pad_token_segment_id = 0
 
     self.special = {
-      'tokens': [self.tokenizer.cls_token, self.tokenizer.sep_token, self.tokenizer.pad_token],
+      'tokens': [self.tokenizer.bos_token, self.tokenizer.sep_token, self.tokenizer.pad_token, self.tokenizer.eos_token],
       'ids': [cls_token_segment_id, sequence_a_segment_id, pad_token_segment_id],
       'maximum': [effective_max, args.max_seq_len]
     }
@@ -132,7 +127,7 @@ class BaseProcessor(object):
     raise NotImplementedError()
 
   def embed_utterance(self, text):
-    cls_token, sep_token, pad_token = self.special['tokens']
+    cls_token, sep_token, pad_token, eos_token = self.special['tokens']
     cls_token_segment_id, sequence_a_segment_id, pad_token_segment_id = self.special['ids']
     effective_max, max_seq_length = self.special['maximum']
 
@@ -144,7 +139,7 @@ class BaseProcessor(object):
     if len(tokens) > effective_max:
       tokens = tokens[:effective_max]
 
-    tokens = tokens + [sep_token]
+    tokens = tokens + [eos_token]
     segment_ids = [cls_token_segment_id] + [sequence_a_segment_id] * len(tokens)
     tokens = [cls_token] + tokens
     # The convention in BERT is:
@@ -181,10 +176,10 @@ class BaseProcessor(object):
   def convert_context_tokens(self, context_tokens):
     # context_tokens is a list of pre-tokenized strings, with action name in the front
     # and we want a list of embedded vectors
-    cls_token, sep_token, pad_token = self.special['tokens']
+    cls_token, sep_token, pad_token, eos_token = self.special['tokens']
     cls_token_segment_id, sequence_a_segment_id, pad_token_segment_id = self.special['ids']
 
-    tokens = context_tokens + [sep_token]
+    tokens = context_tokens + [eos_token]
     segment_ids = [cls_token_segment_id] + [sequence_a_segment_id] * len(tokens)
     tokens = [cls_token] + tokens
 
@@ -214,25 +209,61 @@ class BaseProcessor(object):
     texts = [utterance.split('|')[1] for utterance in dialog_history]  # drop the speaker
     if self.use_intent:
       texts = [f"{intent}|{text}" for text in texts]
-    embedded, segments, mask = self.embed_utterance(f' {sep_token} '.join(texts))
+
+    # original
+    # embedded, segments, mask = self.embed_utterance(f' {sep_token} '.join(texts))
+
+    # input: history [SEP] action1 <extra_id_1> action2 <extra_id_2> ... [EOS]
+    # output: <extra_id_1> value1 <extra_id_2> value2 ... [EOS]
+    # turn_action = target_ids['raw_action']+' | '+target_ids['raw_value']
+    # input_text = f' {sep_token} '.join(texts) + f' {sep_token}'
+    # output_text = ''
+    # for i, potential_action in enumerate(self.action_list):
+    #   current_action_value = {'raw_action': potential_action, 'raw_value': 'none'}
+    #   if potential_action == target_ids['raw_action']:
+    #     current_action_value['raw_value'] = target_ids['raw_value']
+    #   input_text += f' {potential_action} <extra_id_{i+1}>'
+    #   output_text += ' <extra_id_{}> {}'.format(i+1, current_action_value['raw_value'])
+    turn_action = target_ids['raw_action']+' | '+target_ids['raw_value']
+    input_text = f' {sep_token} '.join(texts)
+    output_text = '{} {} {} {}'.format(target_ids['raw_action'], sep_token, target_ids['raw_value'], self.tokenizer.eos_token)
+      
+    embedded, segments, mask = self.embed_utterance(input_text)
+    # output_text = current_action_value['raw_value'].strip() + f' {self.tokenizer.eos_token}'
+    output_batch = self.tokenizer(output_text, padding='max_length', max_length=len(embedded), return_tensors="pt", add_special_tokens=False, return_attention_mask=False)
+    output_batch['input_ids'].masked_fill_(output_batch['input_ids']==self.tokenizer.pad_token_id, -100)
+    output_ids = output_batch['input_ids'][0]
 
     if self.task == 'ast':
       embedded_context = self.convert_context_tokens(context_tokens)
-      feature = ActionFeature(input_ids=embedded, segment_ids=segments, input_mask=mask, 
-            label_ids=target_ids, context=embedded_context)
+      feature = ActionFeature(input_ids=embedded, segment_ids=segments, input_mask=mask, output_ids=output_ids, 
+            label_ids=target_ids, context=embedded_context, turn_action=turn_action)
     elif self.task == 'cds':
       embedded_context = self.convert_context_tokens(context_tokens)
       feature = CascadeFeature(input_ids=embedded, segment_ids=segments, input_mask=mask, 
             label_ids=target_ids, context=embedded_context, candidates=candidates)
 
     return feature
-    
+
+
+
+
+
+
+############### ASTProcessor ###############
 class ASTProcessor(BaseProcessor):
 
   def collect_one_example(self, context, action, value, potential_vals):
+    """
+    context: ['speaker|utterance1', ..., ]
+    action: string
+    value: string
+    potential_vals: possible values for this action
+    """
     # actions that don't require any values
     if value == 'not applicable':
-      target_ids = { 'action': self.action_to_id(action), 'value': -1}
+      target_ids = { 'action': self.action_to_id(action), 'value': -1,
+                     'raw_action': action, 'raw_value': value }
       feature = self.convert_example(context, target_ids, [])
       self.split_feats.append(feature)      
 
@@ -240,7 +271,8 @@ class ASTProcessor(BaseProcessor):
       value_id, context_tokens = self.value_to_id(context, action, value, potential_vals)
       # context_tokens are used for copying from the context when selecting values
       if value_id >= 0:
-        target_ids = { 'action': self.action_to_id(action), 'value': value_id}
+        target_ids = { 'action': self.action_to_id(action), 'value': value_id,
+                       'raw_action': action, 'raw_value': value }
         feature = self.convert_example(context, target_ids, context_tokens)
         self.split_feats.append(feature)
 
@@ -248,12 +280,13 @@ class ASTProcessor(BaseProcessor):
     potential_vals = self.value_by_action[action]
     # just skip if action does not require value inputs
     if len(potential_vals) > 0:
-      # these two actions require 3 value inputs, so we break it down
+      # these two actions require 3 value inputs, so we break it down (len(values) > 1)
       if action in ['verify-identity', 'validate-purchase']:  
         # a smarter model can be made that handles each position conditioned on other values
-        for position, value in zip(['a', 'b', 'c'], values):
-          action_name = action + ' ' + position
-          self.collect_one_example(context, action_name, value, potential_vals)
+        # for position, value in zip(['a', 'b', 'c'], values):
+        #   action_name = action + ' ' + position
+        #   self.collect_one_example(context, action_name, value, potential_vals)
+        self.collect_one_example(context, action, ' [sep] '.join(values), potential_vals)
       # other actions require a single value to be filled
       else:
         self.collect_one_example(context, action, values[0], potential_vals)
@@ -286,6 +319,11 @@ class ASTProcessor(BaseProcessor):
       features[split] = self.split_feats
     return features
 
+
+
+
+
+############### CDSProcessor ###############
 class CDSProcessor(BaseProcessor):
 
   def collect_one_example(self, dialog_history, targets, support_items):
@@ -367,6 +405,22 @@ class CDSProcessor(BaseProcessor):
 
       features[split] = self.split_feats
     return features
+
+#################### Main functions ####################
+
+def setup_dataloader(datasets, batch_size, split):
+  dataset = datasets[split]
+  num_examples = len(dataset)
+  sampler = RandomSampler(dataset) if split == 'train' else SequentialSampler(dataset)
+  collate = dataset.collate_func
+  dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size, collate_fn=collate)
+  print(f"Loaded {split} data with {len(dataloader)} batches")
+  return dataloader, num_examples
+
+def notify_feature_sizes(args, features):
+  if args.verbose:
+    for split, feats in features.items():
+      print(f"{split}: {len(feats)} features")
 
 def process_data(args, tokenizer, ontology, raw_data, cache_path, from_cache):
   # Takes in a pre-processed dataset and performs further operations:
