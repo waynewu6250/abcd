@@ -148,12 +148,12 @@ if __name__ == "__main__":
 
   ckpt_dir, cache_results = check_directories(args)
   raw_data = load_data(args, cache_results[1])
-  tokenizer, ontology = load_tokenizer(args)
-  features, mappings = process_data(args, tokenizer, ontology, raw_data, *cache_results)
+  tokenizer, ontology, guidelines = load_tokenizer(args)
+  features, mappings = process_data(args, tokenizer, ontology, guidelines, raw_data, *cache_results)
   exp_logger = ExperienceLogger(args, ckpt_dir)
 
   if args.task == 'ast':
-    datasets = {split: ActionDataset(args, feats) for split, feats in features.items()}
+    datasets = {split: ActionDataset(args, feats) for split, feats in features.items() if split not in ['action_descriptions', 'value_descriptions']}
     model = ActionStateTracking(args, mappings, ckpt_dir, tokenizer)
     if args.load_pretrain:
       filepath = os.path.join(ckpt_dir, 'pytorch_model.pt')

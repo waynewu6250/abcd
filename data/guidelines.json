@@ -24,7 +24,7 @@
 				{"type": "interaction", "button": "Pull up Account", "text": "Get Full Name or Account ID for [Pull up Account]", "subtext": []},
 				{"type": "kb query", "button": "Validate Purchase", "text": "Gather details to find the appropriate order:", "subtext": ["Username - first", "Email Address - second", "Order ID - third", "Then use a KB query to [Validate Purchase]"]},
 				{"type": "communication", "button": "N/A", "text": "Respond with the information to the customer in natural language", "subtext": ["Pick a refund status from the list of three options > not started, in progress, complete", "Tell the customer this is their refund status", "Pick a payment method from the following three options > online, by phone, by chat", "Tell the customer this is how they initiated that refund (i.e their payment method)"]},
-				{"type": "interaction", "button": "Notify Internal Team", "text": "If the customer is not satisfied with your answer, and would like to change their refund", "subtext": ["If they do not like the status: > Enter 'manager' into [Notify Internal Team] > Explain that you have escalated the issue to the manager", "If they do not like the payment method: > Enter “change method” into [Update Order]"]}
+				{"type": "interaction", "button": "notify team", "text": "If the customer is not satisfied with your answer, and would like to change their refund", "subtext": ["If they do not like the status: > Enter 'manager' into [notify team] > Explain that you have escalated the issue to the manager", "If they do not like the payment method: > Enter “change method” into [Update Order]"]}
 			],
 			"instructions": ["Customers want to know the status and payment method of their refund.  In this case:",
 											"As usual, end by asking if the customer needs anything else."]
@@ -180,7 +180,7 @@
 	"subflows": {
 		"Invalid Credit Card": {"actions": [
 				{"type": "faq/policy", "button": "Try Again", "text": "Option 1", "subtext": ["Instruct the customer to try entering their credit card information again", "Choose the [Try Again] option as your action. Nothing to enter in the form."]},
-				{"type": "faq/policy", "button": "Log Out/In", "text": "Option 2", "subtext": ["Instruct the customer to log out of their account and log back in.", "Choose the [Log Out/In] option as your action.  Nothing to enter in the form."]},
+				{"type": "faq/policy", "button": "Log Out In", "text": "Option 2", "subtext": ["Instruct the customer to log out of their account and log back in.", "Choose the [Log Out In] option as your action.  Nothing to enter in the form."]},
 				{"type": "interaction", "button": "Enter Details", "text": "Option 3", "subtext": ["Have the customer check the expiration date, maybe the credit card is too old", "Enter 'troubleshoot' into the form and choose the [Enter Details] option as your action."]},
 				{"type": "interaction", "button": "Make Purchase", "text": "Option 4 - Make the purchase for the customer.  To do this:", "subtext": ["Start by asking for the customer’s credit card number", "Then ask for the expiration date", "Enter a phrase of brand and item, such as 'Guess Jeans' or 'Calvin Klein Shirt'", "Then select [Make Purchase]"]}
 			],
@@ -189,7 +189,7 @@
 		},
 		"Cart Not Updating": {"actions": [
 				{"type": "faq/policy", "button": "Try Again", "text": "Option 1", "subtext": ["Instruct the customer to refresh the page and add the item again.", "Choose the [Try Again] option as your action. Nothing to enter in the form."]},
-				{"type": "faq/policy", "button": "Log Out/In", "text": "Option 2", "subtext": ["Instruct the customer to log out of their account and log back in.", "Choose the [Log Out/In] option as your action.  Nothing to enter in the form."]},
+				{"type": "faq/policy", "button": "Log Out In", "text": "Option 2", "subtext": ["Instruct the customer to log out of their account and log back in.", "Choose the [Log Out In] option as your action.  Nothing to enter in the form."]},
 				{"type": "interaction", "button": "Enter Details", "text": "Option 3", "subtext": ["Have the customer check whether the selected item is Out-of-Stock.  This will be listed on the bottom left-hand side of the product page.", "Enter 'troubleshoot' into the form and choose the [Enter Details] option as your action."]},
 				{"type": "interaction", "button": "Make Purchase", "text": "Option 4 - Make the purchase for the customer.  To do this:", "subtext": ["Start by asking for the customer’s credit card number", "Then ask for the expiration date", "Enter a phrase of brand and item, such as 'Guess Jeans' or 'Calvin Klein Shirt'", "Then select [Make Purchase]"]}
 			],
@@ -197,9 +197,9 @@
 							"Please do both (A) give instructions in your own words without copy/paste and (B) click the button in the right hand panel. If nothing works, just apologize and end the conversation."]
 		},
 		"Search Not Working": {"actions": [
-				{"type": "faq/policy", "button": "Log Out/In", "text": "Option 1", "subtext": ["Instruct the customer to log out of their account and log back in.", "Choose the [Log Out/In] option as your action.  Nothing to enter in the form."]},
+				{"type": "faq/policy", "button": "Log Out In", "text": "Option 1", "subtext": ["Instruct the customer to log out of their account and log back in.", "Choose the [Log Out In] option as your action.  Nothing to enter in the form."]},
 				{"type": "faq/policy", "button": "Instructions", "text": "Option 2", "subtext": ["Tell the customer to try clearing out their cookies.", "If the customer asks how: Cookies can be reset by checking the settings option in the browser and selecting 'More Details'", "Choose the [Instructions] option as your action. Nothing to enter in the form."]},
-				{"type": "interaction", "button": "Notify Internal Team", "text": "Option 3", "subtext": ["Let the customer know that you will write up a report and let the Website Team know about this, so they can do a better job.", "Enter 'website team' into the input box and [Notify Internal Team]"]},
+				{"type": "interaction", "button": "Notify Team", "text": "Option 3", "subtext": ["Let the customer know that you will write up a report and let the Website Team know about this, so they can do a better job.", "Enter 'website team' into the input box and [notify team]"]},
 				{"type": "faq/policy", "button": "Try Again", "text": "Option 4", "subtext": ["Ask the customer what their original search item is.", "Have the customer search for a different product, such as 'Prada Handbag'.  If that search works, then try to search the original item again.", "Choose the [Try Again] option as your action."]},
 				{"type": "interaction", "button": "Make Purchase", "text": "Option 5 - Make the purchase for the customer.  To do this:", "subtext": ["Start by asking for the customer’s credit card number", "Then ask for the expiration date", "Enter a phrase of brand and item, such as 'Guess Jeans' or 'Calvin Klein Shirt'", "Then select [Make Purchase]"]}
 			],
@@ -207,8 +207,8 @@
 							"Please do both (A) give instructions in your own words without copy/paste and (B) click the button in the right hand panel. If nothing works, just apologize and end the conversation."]
 		},
 		"Website Too Slow": {"actions": [
-				{"type": "interaction", "button": "Notify Internal Team", "text": "Option 1", "subtext": ["Let the customer know that you will write up a report about the slow speeds for the Website Team to fix.", "Enter 'website team' into the input box and [Notify Internal Team]"]},
-				{"type": "faq/policy", "button": "Log Out/In", "text": "Option 2", "subtext": ["Instruct the customer to log out of their account and log back in.", "Choose the [Log Out/In] option as your action.  Nothing to enter in the form."]},
+				{"type": "interaction", "button": "Notify Team", "text": "Option 1", "subtext": ["Let the customer know that you will write up a report about the slow speeds for the Website Team to fix.", "Enter 'website team' into the input box and [notify team]"]},
+				{"type": "faq/policy", "button": "Log Out In", "text": "Option 2", "subtext": ["Instruct the customer to log out of their account and log back in.", "Choose the [Log Out In] option as your action.  Nothing to enter in the form."]},
 				{"type": "faq/policy", "button": "Try Again", "text": "Option 3", "subtext": ["Tell the customer to try visiting another website first.", "If all websites are slow, then it is the customer’s internet connection and not a problem with the AcmeCorp website.", "Choose the [Try Again] option as your action. Nothing to enter in the form."]},
 				{"type": "faq/policy", "button": "Instructions", "text": "Option 4", "subtext": ["Ask the customer to close all the other tabs on their browser. Also instruct them to close other programs that may be running.", "Explain that many programs running in the background can cause a slowdown.", "Choose the [Instructions] option as your action."]},
 				{"type": "interaction", "button": "Make Purchase", "text": "Option 5 - Make the purchase for the customer.  To do this:", "subtext": ["Start by asking for the customer’s credit card number", "Then ask for the expiration date", "Enter a phrase of brand and item, such as 'Guess Jeans' or 'Calvin Klein Shirt'", "Then select [Make Purchase]"]}
@@ -322,7 +322,7 @@
 		},
 		"Out-of-Stock General": {"actions": [
 				{"type": "interaction", "button": "Pull up Account", "text": "Get Full Name or Account ID for [Pull up Account]", "subtext": []},
-				{"type": "interaction", "button": "Notify Internal Team", "text": "Let the customer know that you will write up a report and let the Purchasing Department know about this, so they can do a better job.", "subtext": ["Enter 'purchasing department' into the input box and [Notify Internal Team]"]},
+				{"type": "interaction", "button": "notify team", "text": "Let the customer know that you will write up a report and let the Purchasing Department know about this, so they can do a better job.", "subtext": ["Enter 'purchasing department' into the input box and [notify team]"]},
 				{"type": "communication", "button": "N/A", "text": "Check if the customer is satisfied", "subtext": []},
 				{"type": "kb query", "button": "Promo Code", "text": "If they are still unhappy:", "subtext": ["If the customer keeps pushing, offer them a discount using [Promo Code]", "You do not need to enter any information.", "Generate the code and share that with them"]}
 			],
@@ -332,7 +332,7 @@
 		"Out-of-Stock One Item": {"actions": [
 				{"type": "interaction", "button": "Pull up Account", "text": "Get Full Name or Account ID for [Pull up Account]", "subtext": []},
 				{"type": "interaction", "button": "Record Reason", "text": "Find out which item they are unhappy about", "subtext": ["Get the brand and type, such as 'Gap Sweater' or 'Uniqlo Socks'", "Enter this into the input box and [Record Reason]"]},
-				{"type": "interaction", "button": "Notify Internal Team", "text": "Let the customer know that you will write up a report and let the Purchasing Department know about this, so they can do a better job.", "subtext": ["Enter 'purchasing department' into the input box and [Notify Internal Team]"]},
+				{"type": "interaction", "button": "notify team", "text": "Let the customer know that you will write up a report and let the Purchasing Department know about this, so they can do a better job.", "subtext": ["Enter 'purchasing department' into the input box and [notify team]"]},
 				{"type": "interaction", "button": "Make Purchase", "text": "If the customer is still not satisfied with the outcome, then offer to make the order for the customer", "subtext": ["Let the customer know that you can back-order the item for them.  The item will then ship immediately when it becomes available.", "To proceed, enter the brand and item, such as 'Express Jeans' or 'Banana Republic Shirt' into the input box", "Confirm that you should use the same credit card that is on file.", "Lastly, select [Make Purchase]"]}
 			],
 			"instructions": ["The customer is calling in to call about one particular item being out of stock.",
@@ -470,9 +470,9 @@
 		"Manage Extension": {"actions": [
 				{"type": "interaction", "button": "Pull up Account", "text": "Get Full Name or Account ID for [Pull up Account]", "subtext": []},
 				{"type": "kb query", "button": "Verify Identity", "text": "Start by looking up the order using the [Verify Identity] fields.", "subtext": ["Full name - may have gotten this earlier", "Account ID - may have gotten this earlier", "Order ID"]},
-				{"type": "faq/policy", "button": "Membership Privileges", "text": "Whether or not they get an extension depends on the membership level", "subtext": ["Enter the member level (Gold, Silver, Bronze or Guest) into [Membership Privileges]", "Gold members can always get an extension", "Silver member get an extension if they are only 1 day late", "Bronze and Guest members cannot get an extension > For these, apologize that you cannot do anything for them."]},
+				{"type": "faq/policy", "button": "Membership", "text": "Whether or not they get an extension depends on the membership level", "subtext": ["Enter the member level (Gold, Silver, Bronze or Guest) into [Membership Privileges]", "Gold members can always get an extension", "Silver member get an extension if they are only 1 day late", "Bronze and Guest members cannot get an extension > For these, apologize that you cannot do anything for them."]},
 				{"type": "interaction", "button": "Update Account", "text": "(Option A) If they get an extension", "subtext": ["Enter 'extend subscription' into [Update Account]", "Then ask if they need anything else and wrap up the conversation"]},
-				{"type": "interaction", "button": "Enter Details", "text": "(Option B) If they do not get an extension and escalate to the manager", "subtext": ["Ask for their phone number so they have a number you can call them on", "Put the phone number into [Enter Details]", "Then let them know, the manager will call them back later", "Enter 'manager' into the [Notify Internal Team] action", "Finally, ask if they need anything else and end the conversation"]}
+				{"type": "interaction", "button": "Enter Details", "text": "(Option B) If they do not get an extension and escalate to the manager", "subtext": ["Ask for their phone number so they have a number you can call them on", "Put the phone number into [Enter Details]", "Then let them know, the manager will call them back later", "Enter 'manager' into the [notify team] action", "Finally, ask if they need anything else and end the conversation"]}
 			],
 			"instructions": ["Customer cannot pay for their premium subscription and wants to ask for an extension.",
 							"Wrap up as usual."]
@@ -480,7 +480,7 @@
 		"Manage Dispute Bill": {"actions": [
 				{"type": "interaction", "button": "Pull up Account", "text": "Get Full Name or Account ID for [Pull up Account]", "subtext": []},
 				{"type": "kb query", "button": "Verify Identity", "text": "Start by looking up the order using the [Verify Identity] fields.", "subtext": ["Full name - may have gotten this earlier", "Account ID - may have gotten this earlier", "Order ID"]},
-				{"type": "faq/policy", "button": "Membership Privileges", "text": "Whether or not they get an refund depends on the membership level", "subtext": ["Enter the member level (Gold, Silver, Bronze or Guest) into [Membership Privileges]", "Gold members can always get what they want ", "Silver member get a refund if the amount wrong is less than $10", "Bronze and Guest members depend on checking the system (see next step)"]},
+				{"type": "faq/policy", "button": "Membership", "text": "Whether or not they get an refund depends on the membership level", "subtext": ["Enter the member level (Gold, Silver, Bronze or Guest) into [Membership Privileges]", "Gold members can always get what they want ", "Silver member get a refund if the amount wrong is less than $10", "Bronze and Guest members depend on checking the system (see next step)"]},
 				{"type": "kb query", "button": "Ask the Oracle", "text": "If Bronze or Guest members, you need to [Ask the Oracle]", "subtext": ["If the Oracle says Yes, then they still get the refund", "If the Oracle says No, then the customer does not get the refund"]},
 				{"type": "interaction", "button": "Offer Refund", "text": "Find out how much the customer is asking for", "subtext": ["If they are supposed to be charged $50 and the bill was $60, then the refund amount should be $10", "Perhaps they are just complaining because the bill was high, but they haven’t actually paid it yet.  In this case, just apologize for the misunderstanding.", "However, perhaps they already paid the bill.  In this case, enter the correct amount (for example '10') and select [Offer Refund]"]}
 			],
@@ -493,7 +493,7 @@
 	"subflows": {
 		"Boots FAQ": {"actions": [
 				{"type": "faq/policy", "button": "Search FAQ", "text": "When you realize that the customer is asking something that can be found in the FAQ, click the [Search FAQ] button", "subtext": ["This will swap out for a different view that has FAQ content", "If you made an error, just click [Hide FAQ] to switch back"]},
-				{"type": "faq/policy", "button": "Boots", "text": "Decide which article of clothing the customer is asking about:", "subtext": ["Possible options are Jeans, Shirt, Boots and Jacket", "Click the boots toggle switch", "This will record an action, so try to get this decision correct", "The flow diagram allows you to see all the questions at once."]},
+				{"type": "faq/policy", "button": "Search Boots", "text": "Decide which article of clothing the customer is asking about:", "subtext": ["Possible options are Jeans, Shirt, Boots and Jacket", "Click the boots toggle switch", "This will record an action, so try to get this decision correct", "The flow diagram allows you to see all the questions at once."]},
 				{"type": "faq/policy", "button": "Select Answer", "text": "Read through the list of 8 options", "subtext": ["Select the correct answer for the customer’s question with [Select Answer]", "Remember the question your selected for the survey later"]},
 				{"type": "communication", "button": "N/A", "text": "The system created response does not include all the information, so make sure to explain the details in natural language.", "subtext": ["Do not copy/paste."]}
 			],
@@ -502,7 +502,7 @@
 		},
 		"Shirt FAQ": {"actions": [
 				{"type": "faq/policy", "button": "Search FAQ", "text": "When you realize that the customer is asking something that can be found in the FAQ, click the [Search FAQ] button", "subtext": ["This will swap out for a different view that has FAQ content", "If you made an error, just click [Hide FAQ] to switch back"]},
-				{"type": "faq/policy", "button": "Shirt", "text": "Decide which article of clothing the customer is asking about:", "subtext": ["Possible options are Jeans, Shirt, Boots and Jacket", "Click the shirt toggle switch", "This will record an action, so try to get this decision correct", "The flow diagram allows you to see all the questions at once."]},
+				{"type": "faq/policy", "button": "Search Shirt", "text": "Decide which article of clothing the customer is asking about:", "subtext": ["Possible options are Jeans, Shirt, Boots and Jacket", "Click the shirt toggle switch", "This will record an action, so try to get this decision correct", "The flow diagram allows you to see all the questions at once."]},
 				{"type": "faq/policy", "button": "Select Answer", "text": "Read through the list of 8 options", "subtext": ["Select the correct answer for the customer’s question with [Select Answer]", "Remember the question your selected for the survey later"]},
 				{"type": "communication", "button": "N/A", "text": "The system created response does not include all the information, so make sure to explain the details in natural language.", "subtext": ["Do not copy/paste."]}
 			],
@@ -511,7 +511,7 @@
 		},
 		"Jeans FAQ": {"actions": [
 				{"type": "faq/policy", "button": "Search FAQ", "text": "When you realize that the customer is asking something that can be found in the FAQ, click the [Search FAQ] button", "subtext": ["This will swap out for a different view that has FAQ content", "If you made an error, just click [Hide FAQ] to switch back"]},
-				{"type": "faq/policy", "button": "Jeans", "text": "Decide which article of clothing the customer is asking about:", "subtext": ["Possible options are Jeans, Shirt, Boots and Jacket", "Click the jeans toggle switch", "This will record an action, so try to get this decision correct", "The flow diagram allows you to see all the questions at once."]},
+				{"type": "faq/policy", "button": "Search Jeans", "text": "Decide which article of clothing the customer is asking about:", "subtext": ["Possible options are Jeans, Shirt, Boots and Jacket", "Click the jeans toggle switch", "This will record an action, so try to get this decision correct", "The flow diagram allows you to see all the questions at once."]},
 				{"type": "faq/policy", "button": "Select Answer", "text": "Read through the list of 8 options", "subtext": ["Select the correct answer for the customer’s question with [Select Answer]", "Remember the question your selected for the survey later"]},
 				{"type": "communication", "button": "N/A", "text": "The system created response does not include all the information, so make sure to explain the details in natural language.", "subtext": ["Do not copy/paste."]}
 			],
@@ -520,7 +520,7 @@
 		},
 		"Jacket FAQ": {"actions": [
 				{"type": "faq/policy", "button": "Search FAQ", "text": "When you realize that the customer is asking something that can be found in the FAQ, click the [Search FAQ] button", "subtext": ["This will swap out for a different view that has FAQ content", "If you made an error, just click [Hide FAQ] to switch back"]},
-				{"type": "faq/policy", "button": "Jacket", "text": "Decide which article of clothing the customer is asking about:", "subtext": ["Possible options are Jeans, Shirt, Boots and Jacket", "Click the jacket toggle switch", "This will record an action, so try to get this decision correct", "The flow diagram allows you to see all the questions at once."]},
+				{"type": "faq/policy", "button": "Search Jacket", "text": "Decide which article of clothing the customer is asking about:", "subtext": ["Possible options are Jeans, Shirt, Boots and Jacket", "Click the jacket toggle switch", "This will record an action, so try to get this decision correct", "The flow diagram allows you to see all the questions at once."]},
 				{"type": "faq/policy", "button": "Select Answer", "text": "Read through the list of 8 options", "subtext": ["Select the correct answer for the customer’s question with [Select Answer]", "Remember the question your selected for the survey later"]},
 				{"type": "communication", "button": "N/A", "text": "The system created response does not include all the information, so make sure to explain the details in natural language.", "subtext": ["Do not copy/paste."]}
 			],
@@ -533,7 +533,7 @@
 	"subflows": {
 		"Pricing FAQ": {"actions": [
 				{"type": "faq/policy", "button": "Search FAQ", "text": "When you realize that the customer is asking something that can be found in the FAQ, click the [Search FAQ] button", "subtext": ["This will swap out for a different view that has FAQ content", "If you made an error, just click [Hide FAQ] to switch back"]},
-				{"type": "faq/policy", "button": "Pricing", "text": "Decide which kind of question the customer is asking about:", "subtext": ["Possible options are Pricing, Timing, Membership and Policies", "Click the pricing toggle switch", "This will record an action, so try to get this decision correct.", "The flow diagram allows you to see all the questions at once."]},
+				{"type": "faq/policy", "button": "Search Pricing", "text": "Decide which kind of question the customer is asking about:", "subtext": ["Possible options are Pricing, Timing, Membership and Policies", "Click the pricing toggle switch", "This will record an action, so try to get this decision correct.", "The flow diagram allows you to see all the questions at once."]},
 				{"type": "faq/policy", "button": "Select Answer", "text": "Read through the list of 4 options", "subtext": ["Click [Select Answer] for the correct answer to the customer’s question", "Remember the category for the survey later"]},
 				{"type": "communication", "button": "N/A", "text": "The automated system response does not include all the information, so make sure to explain the details in natural language.", "subtext": ["You should not copy/paste"]}
 			],
@@ -542,7 +542,7 @@
 		},
 		"Membership FAQ": {"actions": [
 				{"type": "faq/policy", "button": "Search FAQ", "text": "When you realize that the customer is asking something that can be found in the FAQ, click the [Search FAQ] button", "subtext": ["This will swap out for a different view that has FAQ content", "If you made an error, just click [Hide FAQ] to switch back"]},
-				{"type": "faq/policy", "button": "Membership", "text": "Decide which kind of question the customer is asking about:", "subtext": ["Possible options are Pricing, Timing, Membership and Policies", "Click the membership toggle switch", "This will record an action, so try to get this decision correct.", "The flow diagram allows you to see all the questions at once."]},
+				{"type": "faq/policy", "button": "Search Membership", "text": "Decide which kind of question the customer is asking about:", "subtext": ["Possible options are Pricing, Timing, Membership and Policies", "Click the membership toggle switch", "This will record an action, so try to get this decision correct.", "The flow diagram allows you to see all the questions at once."]},
 				{"type": "faq/policy", "button": "Select Answer", "text": "Read through the list of 4 options", "subtext": ["Click [Select Answer] for the correct answer to the customer’s question", "Remember the category for the survey later"]},
 				{"type": "communication", "button": "N/A", "text": "The automated system response does not include all the information, so make sure to explain the details in natural language.", "subtext": ["You should not copy/paste"]}
 			],
@@ -551,7 +551,7 @@
 		},
 		"Timing FAQ": {"actions": [
 				{"type": "faq/policy", "button": "Search FAQ", "text": "When you realize that the customer is asking something that can be found in the FAQ, click the [Search FAQ] button", "subtext": ["This will swap out for a different view that has FAQ content", "If you made an error, just click [Hide FAQ] to switch back"]},
-				{"type": "faq/policy", "button": "Timing", "text": "Decide which kind of question the customer is asking about:", "subtext": ["Possible options are Pricing, Timing, Membership and Policies", "Click the timing toggle switch", "This will record an action, so try to get this decision correct.", "The flow diagram allows you to see all the questions at once."]},
+				{"type": "faq/policy", "button": "Search Timing", "text": "Decide which kind of question the customer is asking about:", "subtext": ["Possible options are Pricing, Timing, Membership and Policies", "Click the timing toggle switch", "This will record an action, so try to get this decision correct.", "The flow diagram allows you to see all the questions at once."]},
 				{"type": "faq/policy", "button": "Select Answer", "text": "Read through the list of 4 options", "subtext": ["Click [Select Answer] for the correct answer to the customer’s question", "Remember the category for the survey later"]},
 				{"type": "communication", "button": "N/A", "text": "The automated system response does not include all the information, so make sure to explain the details in natural language.", "subtext": ["You should not copy/paste"]}
 			],
@@ -560,7 +560,7 @@
 		},
 		"Policy FAQ": {"actions": [
 				{"type": "faq/policy", "button": "Search FAQ", "text": "When you realize that the customer is asking something that can be found in the FAQ, click the [Search FAQ] button", "subtext": ["This will swap out for a different view that has FAQ content", "If you made an error, just click [Hide FAQ] to switch back"]},
-				{"type": "faq/policy", "button": "Policy", "text": "Decide which kind of question the customer is asking about:", "subtext": ["Possible options are Pricing, Timing, Membership and Policies", "Click the policy toggle switch", "This will record an action, so try to get this decision correct.", "The flow diagram allows you to see all the questions at once."]},
+				{"type": "faq/policy", "button": "Search Policy", "text": "Decide which kind of question the customer is asking about:", "subtext": ["Possible options are Pricing, Timing, Membership and Policies", "Click the policy toggle switch", "This will record an action, so try to get this decision correct.", "The flow diagram allows you to see all the questions at once."]},
 				{"type": "faq/policy", "button": "Select Answer", "text": "Read through the list of 4 options", "subtext": ["Click [Select Answer] for the correct answer to the customer’s question", "Remember the category for the survey later"]},
 				{"type": "communication", "button": "N/A", "text": "The automated system response does not include all the information, so make sure to explain the details in natural language.", "subtext": ["You should not copy/paste"]}
 			],

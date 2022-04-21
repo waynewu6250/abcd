@@ -1,4 +1,5 @@
 import os, sys, pdb
+from re import L
 import csv
 import json
 import random
@@ -45,19 +46,39 @@ def prepare_value_labels(ontology):
 ############### Base processor ###############
 class BaseProcessor(object):
 
-  def __init__(self, args, tokenizer, ontology):
+  def __init__(self, args, tokenizer, ontology, guidelines):
     self.task = args.task
     self.model_type = args.model_type
     self.use_intent = args.use_intent
 
     self.tokenizer = tokenizer
     self.ontology = ontology
+    self.guidelines = guidelines
 
     actions = ontology['actions']
     self.action_list = [action for section, action_item in actions.items() for action in action_item.keys()]
 
     self.prepare_labels(args)
     self.prepare_special_tokens(args)
+    self.action_descriptions = self.prepare_action_descriptions()
+    self.value_descriptions = self.prepare_value_descriptions()
+
+  ###### Prepare dictionary ######
+  def prepare_action_descriptions(self):
+    self.action_descriptions = {}
+    for flows, desc1 in self.guidelines.items():
+      for intent, desc2 in desc1['subflows'].items():
+        for items in desc2['actions']:
+          action = items['button'].lower().replace(' ', '-')
+          self.action_descriptions[action] = ' '.join([items['text']]+items['subtext'])
+    # select-faq intruction is missing
+    self.action_descriptions['select-faq'] = 'Read throught the options for single item query or storewide query.'
+    action_desc_list = [self.action_descriptions[action] for action in self.mappers['action'].keys()]
+    return [self.embed_utterance(desc) for desc in action_desc_list]
+  
+  def prepare_value_descriptions(self):
+    value_desc_list = list(self.mappers['value'].keys())
+    return [self.embed_utterance(desc) for desc in value_desc_list]
 
   def prepare_labels(self, args):
     self.non_enumerable = self.ontology["values"]["non_enumerable"]
@@ -92,7 +113,10 @@ class BaseProcessor(object):
       'ids': [cls_token_segment_id, sequence_a_segment_id, pad_token_segment_id],
       'maximum': [effective_max, args.max_seq_len]
     }
+  
+  
 
+  ###### Process features ######
   def value_to_id(self, context, action, value, potential_vals):
     # context is a list of utterances
     target_id = -1
@@ -317,6 +341,8 @@ class ASTProcessor(BaseProcessor):
             so_far.append(action_str)
 
       features[split] = self.split_feats
+    features['action_descriptions'] = self.action_descriptions
+    features['value_descriptions'] = self.value_descriptions
     return features
 
 
@@ -422,11 +448,11 @@ def notify_feature_sizes(args, features):
     for split, feats in features.items():
       print(f"{split}: {len(feats)} features")
 
-def process_data(args, tokenizer, ontology, raw_data, cache_path, from_cache):
+def process_data(args, tokenizer, ontology, guidelines, raw_data, cache_path, from_cache):
   # Takes in a pre-processed dataset and performs further operations:
   # 1) Extract the labels 2) Embed the inputs 3) Store both into features 4) Cache the results
   if args.task == 'ast':
-    processor = ASTProcessor(args, tokenizer, ontology)
+    processor = ASTProcessor(args, tokenizer, ontology, guidelines)
   elif args.task == 'cds':
     processor = CDSProcessor(args, tokenizer, ontology)
 

@@ -31,6 +31,7 @@ def load_candidates(args):
 
 def load_tokenizer(args):
   ontology = json.load(open(f'{args.input_dir}/ontology.json', 'r'))
+  guide = json.load(open('data/guidelines.json', 'r'))
   non_enumerable = ontology['values']['non_enumerable']
   special = [f'<{slot}>' for category, slots in non_enumerable.items() for slot in slots]
 
@@ -44,7 +45,7 @@ def load_tokenizer(args):
     tokenizer = T5Tokenizer.from_pretrained('t5-small', bos_token="[bos]", eos_token="[eos]", sep_token="[sep]")
 
   tokenizer.add_tokens(special)
-  return tokenizer, ontology
+  return tokenizer, ontology, guide
 
 def get_optimizer(args, model, adam_epsilon=1e-8):
     no_decay = ['bias', 'LayerNorm.weight']
