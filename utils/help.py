@@ -62,9 +62,12 @@ def prepare_inputs(args, batch, speaker_turn=False):
 
     if args.task == 'ast':
         full_history = {'input_ids': batch[0], 'attention_mask': batch[2]}
-        context_tokens = {'input_ids': batch[3], 'token_type_ids': batch[4], 'attention_mask': batch[5]}
-        # targets = [batch[6], batch[7]] # actions and values
-        targets = [batch[8], batch[9]] # output_ids, turn_action
+        # For normal bert
+        # context_tokens = {'input_ids': batch[3], 'token_type_ids': batch[4], 'attention_mask': batch[5]}
+        context_tokens = {'input_ids': batch[3], 'attention_mask': batch[5]}
+        targets = [batch[6], batch[7]] # actions and values
+        # For seq2seq
+        # targets = [batch[8], batch[9]] # output_ids, turn_action
         tools = device
     else:
         full_history = {'input_ids': batch[0], 'token_type_ids': batch[1], 'attention_mask': batch[2]}

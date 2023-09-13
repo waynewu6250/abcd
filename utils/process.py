@@ -74,11 +74,11 @@ class BaseProcessor(object):
     # select-faq intruction is missing
     self.action_descriptions['select-faq'] = 'Read throught the options for single item query or storewide query.'
     action_desc_list = [self.action_descriptions[action] for action in self.mappers['action'].keys()]
-    return [self.embed_utterance(desc) for desc in action_desc_list]
+    return [self.embed_utterance(desc, max_seq_length=100) for desc in action_desc_list]
   
   def prepare_value_descriptions(self):
     value_desc_list = list(self.mappers['value'].keys())
-    return [self.embed_utterance(desc) for desc in value_desc_list]
+    return [self.embed_utterance(desc, max_seq_length=100) for desc in value_desc_list]
 
   def prepare_labels(self, args):
     self.non_enumerable = self.ontology["values"]["non_enumerable"]
@@ -101,9 +101,9 @@ class BaseProcessor(object):
         self.value_by_action[action] = targets
 
   def prepare_special_tokens(self, args):
-    special_tokens_count = 3 if args.model_type == 'roberta' else 2
+    self.special_tokens_count = 3 if args.model_type == 'roberta' else 2
     # Account for [CLS] and [SEP] with "- 2" and with "- 3" for RoBERTa.
-    effective_max = args.max_seq_len - special_tokens_count
+    effective_max = args.max_seq_len - self.special_tokens_count
     cls_token_segment_id = 0
     sequence_a_segment_id = 0 if args.model_type == 'roberta' else 1
     pad_token_segment_id = 0
@@ -150,10 +150,10 @@ class BaseProcessor(object):
     print("Build features method missing")
     raise NotImplementedError()
 
-  def embed_utterance(self, text):
+  def embed_utterance(self, text, max_seq_length):
     cls_token, sep_token, pad_token, eos_token = self.special['tokens']
     cls_token_segment_id, sequence_a_segment_id, pad_token_segment_id = self.special['ids']
-    effective_max, max_seq_length = self.special['maximum']
+    effective_max = max_seq_length - self.special_tokens_count
 
     text = pad_token if text == '' else text
     if self.model_type in ['roberta', 'large']:
@@ -252,7 +252,7 @@ class BaseProcessor(object):
     input_text = f' {sep_token} '.join(texts)
     output_text = '{} {} {} {}'.format(target_ids['raw_action'], sep_token, target_ids['raw_value'], self.tokenizer.eos_token)
       
-    embedded, segments, mask = self.embed_utterance(input_text)
+    embedded, segments, mask = self.embed_utterance(input_text, self.special['maximum'][1])
     # output_text = current_action_value['raw_value'].strip() + f' {self.tokenizer.eos_token}'
     output_batch = self.tokenizer(output_text, padding='max_length', max_length=len(embedded), return_tensors="pt", add_special_tokens=False, return_attention_mask=False)
     output_batch['input_ids'].masked_fill_(output_batch['input_ids']==self.tokenizer.pad_token_id, -100)

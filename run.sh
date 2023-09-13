@@ -1,6 +1,6 @@
 # -------- ACTION STATE TRACKING -----------
 # >>> Training <<<
-python main.py --learning-rate 1e-4 --weight-decay 0 --batch-size 8 --epochs 10 --log-interval 400 \
+python main.py --learning-rate 1e-4 --weight-decay 0 --batch-size 8 --epochs 10 --log-interval 400 --hidden-dim 512 \
     --grad-accum-steps 4 --model-type t5 --prefix 0420 --filename final --task ast --load-pretrain
 # >>> Examine Results <<<
 python main.py --do-eval --quantify  --model-type t5 --prefix 0524 --filename final --task ast --load-pretrain

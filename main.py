@@ -52,9 +52,10 @@ def run_train(args, datasets, model, exp_logger, kb_labels):
 
       if args.task == 'ast':
         full_history, targets, context_tokens, _ = prepare_inputs(args, batch)
-        # scores = model(full_history, context_tokens)
-        # loss = model.ast_loss(scores, targets, loss_func)
-        loss = model(full_history, targets, context_tokens)
+        scores = model(full_history, targets, context_tokens)
+        loss = model.ast_loss(scores, targets, loss_func)
+        # For seq2seq
+        # loss = model(full_history, targets, context_tokens)
       elif args.task == 'cds':
         full_history, targets, context_tokens, tools = prepare_inputs(args, batch)
         scores = model(full_history, context_tokens, tools)
@@ -106,10 +107,11 @@ def run_eval(args, datasets, model, exp_logger, kb_labels, split='dev'):
 
     with torch.no_grad():
       if args.task == 'ast':
-        # batch_scores = model(full_history, context_tokens)
-        # batch_loss = model.ast_loss(batch_scores, batch_targets, loss_func)
-        batch_loss = model(full_history, batch_targets, context_tokens)
-        batch_value = model.generate(full_history)
+        batch_scores = model(full_history, batch_targets, context_tokens)
+        batch_loss = model.ast_loss(batch_scores, batch_targets, loss_func)
+        # For seq2seq
+        # batch_loss = model(full_history, batch_targets, context_tokens)
+        # batch_value = model.generate(full_history)
       elif args.task == 'cds':
         batch_scores = model(full_history, context_tokens, tools)
         batch_loss = model.cds_loss(batch_scores, batch_targets, loss_func)
@@ -122,7 +124,9 @@ def run_eval(args, datasets, model, exp_logger, kb_labels, split='dev'):
       exp_logger.eval_loss += batch_loss.mean().item()
       exp_logger.batch_steps += 1
     
-    preds.append(batch_value)
+    # preds.append(batch_value)
+    # labels.append(batch_targets)
+    preds.append(batch_scores)
     labels.append(batch_targets)
     convo_ids.append(batch_convo_id if args.cascade else 0)
     turn_counts.append(batch_turn_count if args.cascade else 0)
@@ -131,13 +135,14 @@ def run_eval(args, datasets, model, exp_logger, kb_labels, split='dev'):
       if len(turn_counts) > 10:
         break
     
-  # grouped_preds = [torch.cat([pred[i] for pred in preds], dim=0) for i in range(num_outputs)]
-  # grouped_labels = [torch.cat([label[i] for label in labels], dim=0) for i in range(num_outputs)]
-  # ci_and_tc = (torch.cat(convo_ids, dim=0), torch.cat(turn_counts, dim=0)) if args.cascade else (0, 0)
+  grouped_preds = [torch.cat([pred[i] for pred in preds], dim=0) for i in range(num_outputs)]
+  grouped_labels = [torch.cat([label[i] for label in labels], dim=0) for i in range(num_outputs)]
+  ci_and_tc = (torch.cat(convo_ids, dim=0), torch.cat(turn_counts, dim=0)) if args.cascade else (0, 0)
 
-  # utils = { 'kb_labels': kb_labels, 'ci_and_tc': ci_and_tc }
-  # metrics, res_name = quantify(args, grouped_preds, grouped_labels, utils)
-  metrics, res_name = ast_t5_report(preds, labels)
+  utils = { 'kb_labels': kb_labels, 'ci_and_tc': ci_and_tc }
+  metrics, res_name = quantify(args, grouped_preds, grouped_labels, utils)
+  # For seq2seq
+  # metrics, res_name = ast_t5_report(preds, labels)
   exp_logger.end_eval(metrics, kind=args.filename)
   return (metrics, res_name) if split == 'dev' else metrics
 
@@ -154,7 +159,7 @@ if __name__ == "__main__":
 
   if args.task == 'ast':
     datasets = {split: ActionDataset(args, feats) for split, feats in features.items() if split not in ['action_descriptions', 'value_descriptions']}
-    model = ActionStateTracking(args, mappings, ckpt_dir, tokenizer)
+    model = ActionStateTracking(args, mappings, ckpt_dir, tokenizer, features, device)
     if args.load_pretrain:
       filepath = os.path.join(ckpt_dir, 'pytorch_model.pt')
       model.load_state_dict(torch.load(filepath))

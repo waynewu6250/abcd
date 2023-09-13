@@ -9,11 +9,11 @@ from torch import nn
 from torch import optim
 from torch.nn import functional as F
 
-from transformers import BertModel, RobertaModel, AlbertModel, T5ForConditionalGeneration
+from transformers import BertModel, RobertaModel, AlbertModel, T5ForConditionalGeneration, T5EncoderModel, T5Model
 from transformers.file_utils import WEIGHTS_NAME
 
 class CoreModel(nn.Module):
-  def __init__(self, args, checkpoint_dir, tokenizer):
+  def __init__(self, args, checkpoint_dir, tokenizer, features, device):
     super().__init__()
     if args.model_type == 'bert':
       self.encoder = BertModel.from_pretrained('bert-base-uncased')
@@ -22,9 +22,21 @@ class CoreModel(nn.Module):
     elif args.model_type == 'albert':
       self.encoder = AlbertModel.from_pretrained('albert-base-v2')
     elif args.model_type == 't5':
-      self.encoder = T5ForConditionalGeneration.from_pretrained('t5-small')
+      # For seq2seq
+      # self.encoder = T5ForConditionalGeneration.from_pretrained('t5-small')
+      self.encoder = T5EncoderModel.from_pretrained('t5-small')
     self.tokenizer = tokenizer
     self.encoder.resize_token_embeddings(new_num_tokens=len(self.tokenizer))
+
+    # guidelines
+    token_ids, segment_ids, mask_ids = zip(*features['action_descriptions'])
+    token_ids = torch.stack([torch.tensor(t, dtype=torch.long) for t in token_ids]).to(device)
+    mask_ids = torch.stack([torch.tensor(m, dtype=torch.long) for m in mask_ids]).to(device)
+    self.action_inputs = {'input_ids': token_ids, 'attention_mask': mask_ids}
+    token_ids, segment_ids, mask_ids = zip(*features['value_descriptions'])
+    token_ids = torch.stack([torch.tensor(t, dtype=torch.long) for t in token_ids]).to(device)
+    mask_ids = torch.stack([torch.tensor(m, dtype=torch.long) for m in mask_ids]).to(device)
+    self.value_inputs = {'input_ids': token_ids, 'attention_mask': mask_ids}
 
     self.outputs = ['intent', 'nextstep', 'action', 'value', 'utt']
     self.checkpoint_dir = checkpoint_dir
@@ -65,8 +77,8 @@ class ActionStateTracking(CoreModel):
   for non-enumerable values (copy_score_ or selecting from the ontology for enumerable values (enum_score).
   """
 
-  def __init__(self, args, mappers, checkpoint_dir, tokenizer):
-    super().__init__(args, checkpoint_dir, tokenizer)
+  def __init__(self, args, mappers, checkpoint_dir, tokenizer, features, device):
+    super().__init__(args, checkpoint_dir, tokenizer, features, device)
     self.outputs = ['action', 'value']
     self.mappings = mappers
 
@@ -78,9 +90,56 @@ class ActionStateTracking(CoreModel):
     self.softmax = nn.Softmax(dim=1)
     self.sigmoid = nn.Sigmoid()
 
+    # guidelines
+    self.identity_projection = nn.Linear(args.hidden_dim, args.hidden_dim)
+    self.score_projection = nn.Linear(args.hidden_dim*2, 1)
+
   def forward(self, full_history, targets, context_tokens):
-    loss = self.encoder(**full_history, labels=targets[0]).loss       
-    return loss         
+    # For seq2seq
+    # loss = self.encoder(**full_history, labels=targets[0]).loss       
+    # return loss         
+    
+    # main outputs
+    history_outputs = self.encoder(**full_history)
+    history = history_outputs.last_hidden_state                                            # batch_size x length x hidden
+    history_head = nn.Tanh()(self.identity_projection(history[:, 0, :]))                   # batch_size  x hidden
+
+    # action
+    action_states = self.encoder(**self.action_inputs).last_hidden_state                   # num_actions x length x hidden
+    action_head = nn.Tanh()(self.identity_projection(action_states[:, 0, :]))              # num_actions x hidden
+
+    history_extend = history_head.unsqueeze(1).repeat(1, action_head.size(0), 1)           # batch_size x num_actions x hidden
+    action_extend = action_head.unsqueeze(0).repeat(history_head.size(0), 1, 1)            # batch_size x num_actions x hidden
+    history_action = nn.Tanh()(torch.cat([history_extend, action_extend], dim=2))          # batch_size x num_actions x 2*hidden
+    action_score = self.score_projection(history_action).squeeze(2)                        # batch_size x num_actions
+
+    # context and value
+    value_states = self.encoder(**self.value_inputs).last_hidden_state
+    value_head = nn.Tanh()(self.identity_projection(value_states[:, 0, :]))                 # num_enum x hidden
+
+    history_extend = history_head.unsqueeze(1).repeat(1, value_head.size(0), 1)             # batch_size x num_values x hidden
+    value_extend = value_head.unsqueeze(0).repeat(history_head.size(0), 1, 1)            # batch_size x num_values x hidden
+    history_value = nn.Tanh()(torch.cat([history_extend, value_extend], dim=2))             # batch_size x num_values x 2*hidden
+    enum_prob = self.score_projection(history_value).squeeze(2)                             # batch_size x num_values
+
+    context_outputs = self.encoder(**context_tokens)               
+    pooled_context = context_outputs.last_hidden_state                              # batch_size x length xhidden
+    pooled_context = nn.Tanh()(self.identity_projection(pooled_context[:, 0, :]))   # batch_size x hidden
+
+    copy_prob = self.copy_projection(pooled_context)                # batch_size x 100
+    reverse_copy_proj = self.copy_projection.weight.t()             # hidden x 100
+    copy_context = torch.matmul(pooled_context, reverse_copy_proj)  # batch_size x 100
+    joined = torch.cat([pooled_context, copy_context], dim=1)       # batch_size x 768+100
+    gate = self.sigmoid(self.gating_mechanism(joined))              # batch_size x 1
+
+    enum_score = gate * enum_prob                                   # batch_size x 126
+    copy_score = (1-gate) * copy_prob                               # batch_size x 100
+    value_score = torch.cat([enum_score, copy_score], dim=1)        # batch_size x 226
+    
+    return action_score, value_score
+
+
+    # reference
     # pooled_history = history_outputs.pooler_output                  # batch_size x 768
     # action_score = self.softmax(self.action_projection(pooled_history))
     # enum_prob = self.softmax(self.enum_projection(pooled_history))
